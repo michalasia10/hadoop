@@ -8,9 +8,9 @@ CREATE EXTERNAL TABLE IF NOT EXISTS result_mapreduce
     COMMENT 'output3_pass_count'
     ROW FORMAT DELIMITED
         FIELDS TERMINATED BY '\t'
-    STORED AS TEXTFILE
-    location '/user/michal_lasia3/map_result';
+    STORED AS TEXTFILE;
 
+LOAD DATA LOCAL INPATH '$RESULT_MAP_REDUCE_PATH' INTO TABLE result_mapreduce;
 
 CREATE EXTERNAL TABLE IF NOT EXISTS taxi_zone
 (
@@ -22,8 +22,9 @@ CREATE EXTERNAL TABLE IF NOT EXISTS taxi_zone
     COMMENT 'output3_pass_count'
     ROW FORMAT DELIMITED
         FIELDS TERMINATED BY ','
-    STORED AS TEXTFILE
-    location '/user/michal_lasia3/taxi_zone';
+    STORED AS TEXTFILE;
+
+LOAD DATA LOCAL INPATH '$INPUT_DATA_5' INTO TABLE taxi_zone;
 
 CREATE TABLE IF NOT EXISTS taxi_zone_orc
 (
@@ -53,4 +54,4 @@ from (
          from result_mapreduce map_result
                   join taxi_zone_orc taxi on taxi.locationid = map_result.location
      ) ranks
-where bourough_rank <= 3;
+where bourough_rank <= 3;CREATE EXTERNAL TABLE IF NOT EXISTS result_mapreduce
