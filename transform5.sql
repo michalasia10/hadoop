@@ -24,7 +24,7 @@ CREATE EXTERNAL TABLE IF NOT EXISTS taxi_zone
         FIELDS TERMINATED BY ','
     STORED AS TEXTFILE;
 
-LOAD DATA LOCAL INPATH '$INPUT_DATA_5' INTO TABLE taxi_zone;
+LOAD DATA LOCAL INPATH '$USED_HDFS_HIVE_INPUT_PATH' INTO TABLE taxi_zone;
 
 CREATE TABLE IF NOT EXISTS taxi_zone_orc
 (
@@ -42,7 +42,7 @@ FROM taxi_zone
 WHERE locationid IS NOT NULL;
 
 
-CREATE TABLE IF NOT EXISTS final_result
+CREATE EXTERNAL TABLE IF NOT EXISTS final_result_orc
 (
     year       string,
     mont       string,
@@ -51,10 +51,10 @@ CREATE TABLE IF NOT EXISTS final_result
     pass_count string,
     rank       int
 )
-    COMMENT 'final_result'
+    COMMENT 'final_result_orc'
     STORED as ORC;
 
-INSERT OVERWRITE TABLE final_result
+INSERT OVERWRITE TABLE final_result_orc
 select *
 from (
          select map_result.year,

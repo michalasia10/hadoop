@@ -6,6 +6,7 @@ MAPPER_FILE="mapper.py"
 REDUCER_FILE="reducer.py"
 SCRIPT_HIVE_FILE="transform5.hql"
 TRANSFORMED_HIVE="transform5_with_paths.hql"
+TRANSFORMED_HIVE1="transform5_with_paths1.hql"
 DEFAULT_HDFS_MAPREDUCE_INPUT_PATH="project/hadoop/mapreduce/input"
 DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH="project/hadoop/mapreduce/output"
 DEFAULT_HDFS_HIVE_INPUT_PATH="project/hadoop/pig/input"
@@ -36,13 +37,8 @@ function test_if_directory_exist() {
 echo " "
 echo ">>>> removing leftovers from previous launches"
 ##delete the output directory for mapreduce job (3)
-#if $(hadoop fs -test -d ./output_mr3) ; then hadoop fs -rm -f -r ./output_mr3; fi
-## delete the output directory for the final project result (6)
-#if $(hadoop fs -test -d ./output6) ; then hadoop fs -rm -f -r ./output6; fi
-## delete the directory with the other project's files (scripts, jar files and everything that needs to be available in HDFS to launch this script)
-#if $(hadoop fs -test -d ./project_files) ; then hadoop fs -rm -f -r ./project_files; fi
-## remove the local output directory containing the final result of the project (6)
-#if $(test -d ./output6) ; then rm -rf ./output6; fi
+if $(hadoop fs -test -d ./$DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH; fi
+
 
 ### TESTS
 echo ">>>> Tests for uploaded files: START"
@@ -126,8 +122,9 @@ echo ">>>> copying scripts and data ( HIVE / HDFS / MAPREDUCE ): DONE"
 ### INJECTING PATH TO HIVE
 echo " "
 echo ">>> injecting path to hdfs file: START"
-RESULT='$USED_HDFS_MAPREDUCE_OUTPUT_FILE/$USED_HDFS_MAPREDUCE_OUTPUT_FILE'
-cat $SCRIPT_HIVE_FILE | sed  's|RESULT_MAP_REDUCE_PATH|${RESULT}|g' >$TRANSFORMED_HIVE
+RESULT_MAPREDUCE="$USED_HDFS_MAPREDUCE_OUTPUT_FILE/$USED_HDFS_MAPREDUCE_OUTPUT_FILE"
+cat $SCRIPT_HIVE_FILE | sed "s|\$RESULT_MAP_REDUCE_PATH|$RESULT_MAPREDUCE|g" >$TRANSFORMED_HIVE
+cat $TRANSFORMED_HIVE | sed "s|\$RESULT_MAP_REDUCE_PATH|$USED_HDFS_HIVE_INPUT_PATH|g" >$TRANSFORMED_HIVE1
 echo " "
 echo ">>> injecting path to hdfs file: DONE"
 
@@ -155,14 +152,14 @@ echo ">>>> launch hdfs dfs -getmerge ( merge output from mapreduce ) and copyFro
 
 echo " "
 echo ">>>> launching the Hive - processing (5): START"
-hive -f $TRANSFORMED_HIVE
+hive -f $TRANSFORMED_HIVE1
 echo " "
 echo ">>>> launching the Hive - processing (5): START"
 echo " "
 echo ">>>> store output from hive: START"
-hive -e 'select * from result_map_reduce_orc' >final_result.csv
+hive -e 'select * from final_result_orc' > final_result.csv
 echo " "
-echo ">>>> store output from hive: START"
+echo ">>>> store output from hive: DONE"
 
 ## PRESENT FINAL OUTPUT
 
