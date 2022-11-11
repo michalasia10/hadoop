@@ -9,7 +9,7 @@ TRANSFORMED_HIVE="transform5_with_paths.hql"
 TRANSFORMED_HIVE1="transform5_with_paths1.hql"
 DEFAULT_HDFS_MAPREDUCE_INPUT_PATH="project/hadoop/mapreduce/input"
 DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH="project/hadoop/mapreduce/output"
-DEFAULT_HDFS_HIVE_INPUT_PATH="project/hadoop/pig/input"
+DEFAULT_HDFS_HIVE_INPUT_PATH="project/hadoop/hive/input"
 DEFAULT_BUCKET="gs://wsb-pbl-ml-bucket/project/"
 DEFAULT_DATA_SOURCE_MAP_REDUCE="input/datasource1"
 DEFAULT_DATA_SOURCE_HIVE="input/datasource4"
@@ -36,6 +36,7 @@ function test_if_directory_exist() {
 ### CLEANING
 echo " "
 echo ">>>> removing leftovers from previous launches"
+echo " "
 ##delete the output directory for mapreduce job (3)
 if $(hadoop fs -test -d ./$DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH; fi
 if $(hadoop fs -test -d ./$DEFAULT_HDFS_MAPREDUCE_INPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_MAPREDUCE_INPUT_PATH; fi
@@ -43,6 +44,7 @@ if $(hadoop fs -test -d ./$DEFAULT_HDFS_HDFS_HIVE_INPUT_PATH); then hadoop fs -r
 
 
 ### TESTS
+echo " "
 echo ">>>> Tests for uploaded files: START"
 echo " "
 test_if_file_exist $MAPPER_FILE
@@ -125,9 +127,9 @@ echo ">>>> copying scripts and data ( HIVE / HDFS / MAPREDUCE ): DONE"
 ### INJECTING PATH TO HIVE
 echo " "
 echo ">>> injecting path to hdfs file: START"
-RESULT_MAPREDUCE="$USED_HDFS_MAPREDUCE_OUTPUT_FILE/$USED_HDFS_MAPREDUCE_OUTPUT_FILE"
-cat $SCRIPT_HIVE_FILE | sed "s|\$RESULT_MAP_REDUCE_PATH|$RESULT_MAPREDUCE|g" >$TRANSFORMED_HIVE
-cat $TRANSFORMED_HIVE | sed "s|\$RESULT_MAP_REDUCE_PATH|$USED_HDFS_HIVE_INPUT_PATH|g" >$TRANSFORMED_HIVE1
+RESULT_MAPREDUCE="$USED_HDFS_MAPREDUCE_OUTPUT_PATH/$USED_HDFS_MAPREDUCE_OUTPUT_FILE"
+cat $SCRIPT_HIVE_FILE | sed "s|\$RESULT_MAP_REDUCE_PATH|/$RESULT_MAPREDUCE|g" >$TRANSFORMED_HIVE
+cat $TRANSFORMED_HIVE | sed "s|\$USED_HDFS_HIVE_INPUT_PATH|/$USED_HDFS_HIVE_INPUT_PATH|g" >$TRANSFORMED_HIVE1
 echo " "
 echo ">>> injecting path to hdfs file: DONE"
 
@@ -138,8 +140,8 @@ mapred streaming \
   -files $MAPPER_FILE,$REDUCER_FILE \
   -input $USED_HDFS_MAPREDUCE_INPUT_PATH/*.csv \
   -output $USED_HDFS_MAPREDUCE_OUTPUT_PATH \
-  -mapper $MAPPER_FILE \
-  -reducer $REDUCER_FILE
+  -mapper "python3 $MAPPER_FILE" \
+  -reducer "python3 $REDUCER_FILE"
 echo " "
 echo ">>>> launching the MapReduce job as Hadoop Streaming- processing (2): DONE"
 echo " "
@@ -148,7 +150,7 @@ echo " "
 echo " "
 echo ">>>> launch hdfs dfs -getmerge ( merge output from mapreduce ) and copyFromLocal to HDFS for HIVE purpose: START"
 hdfs dfs -getmerge $USED_HDFS_MAPREDUCE_OUTPUT_PATH/* $USED_HDFS_MAPREDUCE_OUTPUT_FILE
-hadoop fs -copyFromLocal $USED_HDFS_MAPREDUCE_OUTPUT_FILE $USED_HDFS_HIVE_INPUT_PATH
+hadoop fs -copyFromLocal $USED_HDFS_MAPREDUCE_OUTPUT_FILE $USED_HDFS_MAPREDUCE_OUTPUT_PATH
 echo ">>>> launch hdfs dfs -getmerge ( merge output from mapreduce ) and copyFromLocal to HDFS for HIVE purpose: DONE"
 
 ### LAUNCH HIVE
