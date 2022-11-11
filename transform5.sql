@@ -42,7 +42,19 @@ FROM taxi_zone
 WHERE locationid IS NOT NULL;
 
 
+CREATE TABLE IF NOT EXISTS final_result
+(
+    year       string,
+    mont       string,
+    borough    string,
+    zone       STRING,
+    pass_count string,
+    rank       int
+)
+    COMMENT 'final_result'
+    STORED as ORC;
 
+INSERT OVERWRITE TABLE final_result
 select *
 from (
          select map_result.year,
@@ -54,4 +66,5 @@ from (
          from result_mapreduce map_result
                   join taxi_zone_orc taxi on taxi.locationid = map_result.location
      ) ranks
-where bourough_rank <= 3;CREATE EXTERNAL TABLE IF NOT EXISTS result_mapreduce
+where bourough_rank <= 3;
+CREATE EXTERNAL TABLE IF NOT EXISTS result_mapreduce
