@@ -10,7 +10,7 @@ TRANSFORMED_HIVE1="transform5_with_paths1.hql"
 DEFAULT_HDFS_MAPREDUCE_INPUT_PATH="project/hadoop/mapreduce/input"
 DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH="project/hadoop/mapreduce/output"
 DEFAULT_HDFS_HIVE_INPUT_PATH="project/hadoop/pig/input"
-DEFAULT_BUCKET="gs://ml"
+DEFAULT_BUCKET="gs://wsb-pbl-ml-bucket/project/"
 DEFAULT_DATA_SOURCE_MAP_REDUCE="input/datasource1"
 DEFAULT_DATA_SOURCE_HIVE="input/datasource4"
 DEFAULT_HDFS_MAPREDUCE_OUTPUT_FILE="output_file.csv"
@@ -38,6 +38,8 @@ echo " "
 echo ">>>> removing leftovers from previous launches"
 ##delete the output directory for mapreduce job (3)
 if $(hadoop fs -test -d ./$DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH; fi
+if $(hadoop fs -test -d ./$DEFAULT_HDFS_MAPREDUCE_INPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_MAPREDUCE_INPUT_PATH; fi
+if $(hadoop fs -test -d ./$DEFAULT_HDFS_HDFS_HIVE_INPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_HIVE_INPUT_PATH; fi
 
 
 ### TESTS
@@ -48,6 +50,7 @@ test_if_file_exist $REDUCER_FILE
 test_if_file_exist $SCRIPT_HIVE_FILE
 echo " "
 echo ">>>> Tests for uploaded files: DONE"
+chmod +x *.py
 
 ### BUCKET READER
 echo " "

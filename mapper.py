@@ -17,7 +17,9 @@ def prepare_variables(line):
     :return ( tuple )
     """
     values = line.split(",")
+
     date_pick_up = datetime.strptime(values[DATE_PICK_UP_IDX], "%Y-%m-%d %H:%M:%S")
+
     pull_location = values[PULL_LOCATION_IDX]
     payment_type = values[PAYMENT_TYPE_IDX]
     month = date_pick_up.month
@@ -35,7 +37,7 @@ def print_output(year, month, payment_type, pull_location, passenger_count):
 
 if __name__ == '__main__':
     for line_num, line in enumerate(sys.stdin):
-        if 'VendorID' in line or line_num < 5:
+        if not (line and line.strip()) or 'VendorID' in line or line_num < 5:
             continue
 
         variables = prepare_variables(line)
