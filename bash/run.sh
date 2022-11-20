@@ -14,6 +14,8 @@ DEFAULT_BUCKET="gs://wsb-pbl-ml-bucket/project/"
 DEFAULT_DATA_SOURCE_MAP_REDUCE="input/datasource1"
 DEFAULT_DATA_SOURCE_HIVE="input/datasource4"
 DEFAULT_HDFS_MAPREDUCE_OUTPUT_FILE="output_file.csv"
+DEFAULT_TAXI_ZONE_FILE="taxi_zone_lookup.csv"
+DEFAULT_TAXI_ZONE_PATH_LOCAL="$DEFAULT_DATA_SOURCE_HIVE/$DEFAULT_TAXI_ZONE_FILE"
 
 function test_if_file_exist() {
   if [ -f ${1} ]; then
@@ -35,13 +37,15 @@ function test_if_directory_exist() {
 
 ### CLEANING
 echo " "
-echo ">>>> removing leftovers from previous launches"
+echo ">>>> removing leftovers from previous launches: START"
 echo " "
 ##delete the output directory for mapreduce job (3)
 if $(hadoop fs -test -d ./$DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_MAPREDUCE_OUTPUT_PATH; fi
 if $(hadoop fs -test -d ./$DEFAULT_HDFS_MAPREDUCE_INPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_MAPREDUCE_INPUT_PATH; fi
 if $(hadoop fs -test -d ./$DEFAULT_HDFS_HDFS_HIVE_INPUT_PATH); then hadoop fs -rm -f -r ./$DEFAULT_HDFS_HIVE_INPUT_PATH; fi
-
+echo " "
+echo ">>>> removing leftovers from previous launches: DONE"
+echo " "
 
 ### TESTS
 echo " "
@@ -53,7 +57,11 @@ test_if_file_exist $SCRIPT_HIVE_FILE
 echo " "
 echo ">>>> Tests for uploaded files: DONE"
 chmod +x *.py
+chmod +x *.hql
 
+
+echo " "
+echo ">>>> Questions for user: START"
 ### BUCKET READER
 echo " "
 read -p "Provide link to folder in bucket or use default; [ENTER to use default ]" BUCKET
@@ -66,6 +74,7 @@ echo ">>>> copying all data and scripts from bucket to local : START"
 hadoop fs -copyToLocal $USED_BUCKET/*
 echo " "
 echo ">>>> copying all data and scripts from bucket to local : DONE"
+test_if_file_exist $DEFAULT_TAXI_ZONE_PATH_LOCAL
 
 ### ASK FOR DATASOURCE CATALOGS
 echo " "
@@ -107,6 +116,9 @@ read -p "Provide path where to put inputs in HDFS for hive or use default; [ENTE
 USED_HDFS_HIVE_INPUT_PATH=${HDFS_HIVE_INPUT_PATH:-${DEFAULT_HDFS_HIVE_INPUT_PATH}}
 echo "You're going to be use: $USED_HDFS_HIVE_INPUT_PATH"
 echo " "
+echo " "
+echo ">>>> Questions for user: DONE"
+
 
 ### PREPARE FOLDERS FOR INPUTS
 echo " "
@@ -120,7 +132,7 @@ echo ">>>> creating folders for inputs: DONE"
 echo " "
 echo ">>>> copying scripts and data ( HIVE / HDFS / MAPREDUCE ): START"
 hadoop fs -copyFromLocal $USED_DATA_SOURCE_MAP_REDUCE/*.csv $USED_HDFS_MAPREDUCE_INPUT_PATH
-hadoop fs -copyFromLocal $USED_DATA_SOURCE_HIVE/*.csv $USED_DEFAULT_HDFS_HIVE_INPUT_PATH
+hadoop fs -copyFromLocal $USED_DATA_SOURCE_HIVE/*.csv $USED_HDFS_HIVE_INPUT_PATH
 echo " "
 echo ">>>> copying scripts and data ( HIVE / HDFS / MAPREDUCE ): DONE"
 
@@ -128,8 +140,9 @@ echo ">>>> copying scripts and data ( HIVE / HDFS / MAPREDUCE ): DONE"
 echo " "
 echo ">>> injecting path to hdfs file: START"
 RESULT_MAPREDUCE="$USED_HDFS_MAPREDUCE_OUTPUT_PATH/$USED_HDFS_MAPREDUCE_OUTPUT_FILE"
-cat $SCRIPT_HIVE_FILE | sed "s|\$RESULT_MAP_REDUCE_PATH|/$RESULT_MAPREDUCE|g" >$TRANSFORMED_HIVE
-cat $TRANSFORMED_HIVE | sed "s|\$USED_HDFS_HIVE_INPUT_PATH|/$USED_HDFS_HIVE_INPUT_PATH|g" >$TRANSFORMED_HIVE1
+HIVE_FILE="$USED_HDFS_HIVE_INPUT_PATH/$DEFAULT_TAXI_ZONE_FILE"
+cat $SCRIPT_HIVE_FILE | sed "s|\$RESULT_MAP_REDUCE_PATH|$RESULT_MAPREDUCE|g" >$TRANSFORMED_HIVE
+cat $TRANSFORMED_HIVE | sed "s|\$USED_HDFS_HIVE_INPUT_PATH|$HIVE_FILE|g" >$TRANSFORMED_HIVE1
 echo " "
 echo ">>> injecting path to hdfs file: DONE"
 
@@ -151,6 +164,7 @@ echo " "
 echo ">>>> launch hdfs dfs -getmerge ( merge output from mapreduce ) and copyFromLocal to HDFS for HIVE purpose: START"
 hdfs dfs -getmerge $USED_HDFS_MAPREDUCE_OUTPUT_PATH/* $USED_HDFS_MAPREDUCE_OUTPUT_FILE
 hadoop fs -copyFromLocal $USED_HDFS_MAPREDUCE_OUTPUT_FILE $USED_HDFS_MAPREDUCE_OUTPUT_PATH
+echo " "
 echo ">>>> launch hdfs dfs -getmerge ( merge output from mapreduce ) and copyFromLocal to HDFS for HIVE purpose: DONE"
 
 ### LAUNCH HIVE
